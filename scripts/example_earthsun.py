@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 sys.path.insert(1, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import listen
 
+savefigs = False
+
 # Choose LUMOS mode
 mode = listen.LumosMode.G300M()
 
@@ -39,23 +41,38 @@ obs.observe(lam, tdepth, sflux=sflux, nocc = 1, nout = 1)
 
 # Plot SNR at the native resolution
 fig, ax = obs.plot_SNR()
-plt.show();
+if savefigs:
+    fig.savefig("../img/earthsun_10pc_native_SNR.png", bbox_inches = "tight")
+else:
+    plt.show();
 
 # Plot the spectrum at the native resolution
 fig, ax = obs.plot_spectrum()
-plt.show();
+if savefigs:
+    fig.savefig("../img/earthsun_10pc_native_spec.png", bbox_inches = "tight")
+else:
+    plt.show();
 
 # Plot maximally binned spectrum
 fig, ax = obs.plot_max_binning_spectrum()
-plt.show();
+if savefigs:
+    fig.savefig("../img/earthsun_10pc_maxbin_spec.png", bbox_inches = "tight")
+else:
+    plt.show();
 
 # Rebin by a large factor
 obs.rebin_spectrum(bfactor=1e4)
 
 # Plot binned SNR
 fig, ax = obs.plot_SNR(use_binned = True)
-plt.show();
+if savefigs:
+    fig.savefig("../img/earthsun_10pc_binned_SNR.png", bbox_inches = "tight")
+else:
+    plt.show();
 
 # Plot binned spectrum
 fig, ax = obs.plot_spectrum(use_binned = True)
-plt.show();
+if savefigs:
+    fig.savefig("../img/earthsun_10pc_binned_spec.png", bbox_inches = "tight")
+else:
+    plt.show();
