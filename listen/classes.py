@@ -27,7 +27,7 @@ else:
     mpl.rc('text', usetex=False)
 
 # Import local
-from . import functions
+from . import utils
 
 __all__ = ["System", "LumosMode", "Telescope", "Observation"]
 
@@ -126,7 +126,7 @@ class LumosMode(object):
             plt.setp(axes[i].get_yticklabels(), fontsize=12, rotation=0)
         axes[1].set_yscale("log")
         axes[4].set_yscale("log")
-        return fig, ax
+        return fig, axes
 
 class Telescope(object):
     """
@@ -141,7 +141,7 @@ class Telescope(object):
     mode : `LumosMode`
         Instantiated LUMOS mode object
     """
-    def __init__(self, A = 134.8, tput = 0.32, mode = G300M):
+    def __init__(self, A = 134.8, tput = 0.32, mode = LumosMode.G300M()):
         self.A = A
         self.tput = tput
         self.mode = mode
@@ -202,23 +202,23 @@ class Observation(object):
         # Calculate intensity for the star [W/m^2/um/sr]
         if sflux is None:
             # Using a blackbody
-            Bstar = functions.planck(Tstar, lam)
+            Bstar = utils.planck(Tstar, lam)
         else:
             # Using provided TOA stellar flux
-            Bstar = sflux / ( np.pi*(system.Rs*u.Rsun.in_units(u.km)/(system.a*u.AU.in_units(u.km)))**2. )
+            Bstar = sflux / ( np.pi*(self.system.Rs*u.Rsun.in_units(u.km)/(self.system.a*u.AU.in_units(u.km)))**2. )
 
         # solid angle in steradians
-        omega_star = np.pi*(system.Rs*u.Rsun.in_units(u.km)/(system.d*u.pc.in_units(u.km)))**2.
-        omega_planet = np.pi*(system.Rp*u.Rearth.in_units(u.km)/(system.d*u.pc.in_units(u.km)))**2.
+        omega_star = np.pi*(self.system.Rs*u.Rsun.in_units(u.km)/(self.system.d*u.pc.in_units(u.km)))**2.
+        omega_planet = np.pi*(self.system.Rp*u.Rearth.in_units(u.km)/(self.system.d*u.pc.in_units(u.km)))**2.
 
         # fluxes at earth [W/m^2/um]
         Fstar = Bstar * omega_star
 
         # Exposure time is transit diration times number of occultations observed
-        tint = nocc * system.tdur
+        tint = nocc * self.system.tdur
 
         # Bin high res transit model to instrument resolution
-        RpRs2 = functions.downbin_spec(tdepth, lam, wlum, dwlum)
+        RpRs2 = utils.downbin_spec(tdepth, lam, wlum, dwlum)
 
         # Check for non-finite values (usually from mismatched grids)
         if np.sum(~np.isfinite(RpRs2)) > 0:
@@ -226,7 +226,7 @@ class Observation(object):
             RpRs2 = np.interp(wlum, lam, tdepth)
 
         # Bin high res stellar flux to instrument resolution
-        Fslo = functions.downbin_spec(Fstar, lam, wlum, dwlum)
+        Fslo = utils.downbin_spec(Fstar, lam, wlum, dwlum)
 
         # Check for non-finite values (usually from mismatched grids)
         if np.sum(~np.isfinite(Fslo)) > 0:
@@ -256,7 +256,7 @@ class Observation(object):
 
         # Generate synthetic observations
         sig = RpRs2/SNR
-        obs = functions.random_draw(RpRs2, sig)
+        obs = utils.random_draw(RpRs2, sig)
 
         # Save values
         self.wlum = wlum
@@ -288,7 +288,7 @@ class Observation(object):
             use_binned = False
 
         # Plot
-        fig, ax = plt.subplots(figsize = (10,8))
+        fig, ax = plt.subplots(figsize = (10,6))
         ax.plot(self.wlum, self.SNR, alpha = 1.0, label = "Native Resolution")
         if use_binned:
             ax.plot(self.wlbin, self.SNRbin, alpha = 1.0, label = r"Binned $\times %i$" %self.bfactor)
@@ -313,7 +313,7 @@ class Observation(object):
         m = [self.SNR > SNRcut]
 
         # Plot
-        fig, ax = plt.subplots(figsize = (10,8))
+        fig, ax = plt.subplots(figsize = (10,6))
         ax.plot(self.wlum, self.RpRs2, alpha = 1.0, label = "Model Spectrum")
 
         if use_binned:
@@ -345,10 +345,10 @@ class Observation(object):
 
         # Generate synthetic observations
         sig = bRpRs2/bSNR
-        obs = functions.random_draw(bRpRs2, sig)
+        obs = utils.random_draw(bRpRs2, sig)
 
         # Plot
-        fig, ax = plt.subplots(figsize = (10,8))
+        fig, ax = plt.subplots(figsize = (10,6))
         ax.plot(self.wlum, self.RpRs2, alpha = 1.0, label = "Native Resolution")
         ax.plot(bwlum, bRpRs2, "o", label = "Max Binned Model")
         ax.errorbar(bwlum, obs, yerr=sig, fmt="o", color="k", label = "Max Binned Obs.")
@@ -374,7 +374,7 @@ class Observation(object):
         dwlbin = np.mean(self.dwlum)*bfactor
 
         # Create new wavelength grid
-        wlbin, dwlbin = functions.construct_lam(self.wlum.min() + 0.5*dwlbin, self.wlum.max() - 0.5*dwlbin, dlam=dwlbin)
+        wlbin, dwlbin = utils.construct_lam(self.wlum.min() + 0.5*dwlbin, self.wlum.max() - 0.5*dwlbin, dlam=dwlbin)
 
         print("Number of binned points : %i" %len(wlbin))
 
@@ -387,7 +387,7 @@ class Observation(object):
 
         # Generate synthetic observations
         sig = RpRs2bin/SNRbin
-        obs = functions.random_draw(RpRs2bin, sig)
+        obs = utils.random_draw(RpRs2bin, sig)
 
         self.bfactor = bfactor
         self.wlbin = wlbin
