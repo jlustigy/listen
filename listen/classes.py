@@ -63,7 +63,7 @@ class System(object):
         self.Tstar = Tstar
 
     @classmethod
-    def for_TRAPPIST1b(cls):
+    def TRAPPIST1b(cls):
         return cls(d = 12.2, Rp = 1.086, Rs = 0.117, a = 0.0111, tdur = 36.40 * 60,
                    Tstar = 2560.)
 
